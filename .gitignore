@@ -1,2 +1,5 @@
 venv
 .env
+alembic
+alembic.ini
+base_de_dados.db
