@@ -1,3 +1,8 @@
+"""
+Este módulo define os modelos SQLAlchemy para o banco de dados da aplicação,
+incluindo Usuário, Pedido e ItemPedido. Ele também configura a conexão com o banco de dados.
+"""
+
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, Float, ForeignKey
 from sqlalchemy.orm import declarative_base
 from sqlalchemy_utils.types import ChoiceType
@@ -11,6 +16,17 @@ Base = declarative_base()
 # Cria as classes e tabelas co banco
 
 class Usuario(Base):
+    """
+    Representa um usuário no sistema.
+
+    Atributos:
+        id (int): Chave primária, ID do usuário auto-incrementável.
+        nome (str): O nome do usuário.
+        email (str): O endereço de e-mail único do usuário.
+        senha (str): A senha hash do usuário (128 bits).
+        ativo (bool): Indica se a conta do usuário está ativa.
+        admin (bool): Indica se o usuário possui privilégios de administrador.
+    """
     __tablename__ = "usuario"
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
@@ -21,6 +37,16 @@ class Usuario(Base):
     admin = Column("admin", Boolean, default=False)
 
     def __init__(self, nome:str, email:str, senha:str, ativo:bool, admin=False):
+        """
+        Inicializa um novo objeto Usuario.
+
+        Args:
+            nome (str): O nome do usuário.
+            email (str): O endereço de e-mail único do usuário.
+            senha (str): A senha hash do usuário.
+            ativo (bool): Indica se a conta do usuário está ativa.
+            admin (bool, optional): Indica se o usuário possui privilégios de administrador. Padrão para False.
+        """
         self.nome = nome
         self.email = email
         self.senha = senha
@@ -29,6 +55,15 @@ class Usuario(Base):
 
 
 class Pedido(Base):
+    """
+    Representa um pedido feito por um usuário.
+
+    Atributos:
+        id (int): Chave primária, ID do pedido auto-incrementável.
+        status (str): O status atual do pedido (por exemplo, "PENDING", "CANCELED", "FINISHED").
+        usuario (int): Chave estrangeira para o usuário que fez o pedido.
+        preco (float): O preço total do pedido.
+    """
     __tablename__ = "pedido"
 
     ORDER_STATUS = (
@@ -44,6 +79,14 @@ class Pedido(Base):
     # items =
 
     def __init__(self, usuario:int, preco:float = 0, status="PENDING"):
+        """
+        Inicializa um novo objeto Pedido.
+
+        Args:
+            usuario (int): O ID do usuário que fez o pedido.
+            preco (float, optional): O preço total do pedido. Padrão para 0.
+            status (str, optional): O status inicial do pedido. Padrão para "PENDING".
+        """
         self.usuario = usuario
         self.preco = preco
         self.usuario = usuario
@@ -53,6 +96,17 @@ class Pedido(Base):
 
 
 class ItemPedido(Base):
+    """
+    Representa um item dentro de um pedido.
+
+    Atributos:
+        id (int): Chave primária, ID do item de pedido auto-incrementável.
+        quantidade (int): A quantidade do item.
+        sabor (str): O sabor/tipo do item.
+        tamanho (str): O tamanho do item.
+        preco_unitario (float): O preço unitário do item.
+        pedido (int): Chave estrangeira para o pedido ao qual este item pertence.
+    """
     __tablename__ = "item_pedido"
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
@@ -63,6 +117,16 @@ class ItemPedido(Base):
     pedido = Column("pedido", ForeignKey("pedido.id"), nullable=False)
 
     def __init__(self, sabor, tamanho, quantidade, pedido, preco_unitario):
+        """
+        Inicializa um novo objeto ItemPedido.
+
+        Args:
+            sabor (str): O sabor/tipo do item.
+            tamanho (str): O tamanho do item.
+            quantidade (int): A quantidade do item.
+            pedido (int): O ID do pedido ao qual este item pertence.
+            preco_unitario (float): O preço unitário do item.
+        """
         self.sabor = sabor
         self.tamanho = tamanho
         self.quantidade = quantidade
@@ -70,6 +134,4 @@ class ItemPedido(Base):
         self.preco_unitario = preco_unitario
 
 
-
-# Executa a criação de metadados do banco
 
