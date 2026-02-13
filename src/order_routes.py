@@ -1,3 +1,5 @@
+"""Delimita os endpoints relacionados a Pedidos na API"""
+
 from fastapi import APIRouter
 
 order_router = APIRouter(prefix="/order", tags=["Pedidos"])
@@ -10,4 +12,3 @@ async def orders():
     return {"message": "Você acessou a rota de pedidos"}
 
 
- 
