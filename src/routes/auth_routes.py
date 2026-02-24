@@ -4,12 +4,13 @@ incluindo funcionalidades de criação de usuário, login e atualização de tok
 """
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 
 from src.models import Usuario
-from src.dependencies import make_session
-from src.authentication import bcrypt_context, create_token, authenticate_user, verify_token
+from src.dependencies import make_session, verify_token
+from src.authentication import bcrypt_context, create_token, authenticate_user
 from src.schemas import UserSchema, LoginSchema
 
 # Delimitando as rotas de autenticação
@@ -85,8 +86,33 @@ async def login(login_schema: LoginSchema, session: Session = Depends(make_sessi
                 "token_type": "Bearer"}
 
 
+@auth_router.post("/login-form")
+async def login_form(login_form: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(make_session)):
+    """
+    Autentica um usuário e emite tokens de acesso e refresh.
+
+    Args:
+        login_schema (LoginSchema): Esquema Pydantic contendo as credenciais de login do usuário (e-mail e senha).
+        session (Session): A dependência da sessão do banco de dados SQLAlchemy.
+
+    Raises:
+        HTTPException: Se a autenticação falhar devido a credenciais incorretas.
+
+    Returns:
+        dict: Um dicionário contendo o token de acesso, token de refresh e tipo de token.
+    """
+
+    user = authenticate_user(login_form.username, login_form.password, session)
+    if not user:
+        raise HTTPException(status_code=400, detail="Credenciais incorretas")
+    else:
+        access_token = create_token(user.id)
+        return {"access_token": access_token,
+                "token_type": "Bearer"}
+
+
 @auth_router.get("/refresh")
-async def use_refresh_token(refresh_token: str):
+async def use_refresh_token(user: Usuario = Depends(verify_token)):
     """
     Troca um token de refresh válido por um novo token de acesso.
 
@@ -97,7 +123,7 @@ async def use_refresh_token(refresh_token: str):
         dict: Um dicionário contendo o novo token de acesso e o tipo de token.
     """
     # Verificar o refresh_token
-    user = verify_token(refresh_token)
+    print(user)
     access_token = create_token(user.id)
     return {"access_token": access_token,
             "token_type": "Bearer"}

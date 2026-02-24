@@ -5,12 +5,12 @@ Este módulo define as rotas da API relacionadas ao gerenciamento de pedidos na 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from src.dependencies import make_session
+from src.dependencies import make_session, verify_token
 from src.schemas import OrderSchema
 from src.models import Pedido
 
 
-order_router = APIRouter(prefix="/orders", tags=["Pedidos"])
+order_router = APIRouter(prefix="/orders", tags=["Pedidos"], dependencies=[Depends(verify_token)])
 
 @order_router.get("/", tags=["Pedidos"])
 async def orders():
@@ -38,4 +38,22 @@ async def make_order(order_schema:OrderSchema, session: Session = Depends(make_s
     new_order = Pedido(usuario=order_schema.user_id)
     session.add(new_order)
     session.commit()
-    return {"message": f"Pedido adicionado com sucesso. ID do Pedido: {new_order.id}"}
+    return {"m  essage": f"Pedido adicionado com sucesso. ID do Pedido: {new_order.id}"}
+
+
+@order_router.post("/order/cancel/{order_id}", tags=["Pedidos"])
+async def cancel_order(order_id : int, session: Session = Depends(make_session), user = Depends(verify_token)):
+    order = session.query(Pedido).filter(Pedido.id == order_id).first()
+
+    if not order:
+        raise HTTPException(status_code=400, detail="Pedido não encontrado")
+
+    if not user.admin and user.id != order.usuario.id:
+        raise HTTPException(status_code=401, detail="Acesso negado")
+
+    order.status = "CANCELADO"
+    session.commit()
+    return {
+        "message": f"Pedido {order_id} cancelado com sucesso",
+        "order" : order
+    }
